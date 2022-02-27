@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      MemorySize: 128
+      Architectures:
+      - arm64
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-1wdfh0xkos4ex/973bd961357cf4d5c2e27f270a1d7fe4
+    Metadata:
+      SamResourceId: HelloWorldFunction
+Outputs:
+  FunctionName:
+    Value:
+      Ref: HelloWorldFunction
+    Description: Name of the Lambda function
