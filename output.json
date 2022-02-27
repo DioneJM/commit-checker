@@ -1,1 +1,1 @@
-{"errorMessage":"RequestId: 77c85a59-c766-4c2f-ae7d-7f62753c3294 Error: fork/exec /var/task/bootstrap: exec format error","errorType":"Runtime.InvalidEntrypoint"}
+{"command":"Say Hi!"}
