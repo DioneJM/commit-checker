@@ -1,7 +1,7 @@
 # Development
 ## Create
 ```bash
-sam deploy
+sam deploy -t package.yaml --guided
 ```
 note: requires samconfig.toml - [see docs for more info](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html)
 
@@ -21,10 +21,7 @@ sam deploy
 
 ## How to invoke lambda
 ```bash
-aws lambda invoke --cli-binary-format raw-in-base64-out \                                                                                                              12:34:48
-                                    --function-name sam-app-HelloWorldFunction-mjdmEI9bYk4Y \
-                                    --payload '{"firstName": "Dione" }' \
-                                    output.json && cat output.json
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name commit-checker-stack-CommitChecker-lVlrMRBDMr6X --payload '{"firstName": "Dione" }' output.json && cat output.json
 ```
 
 ## Clean up

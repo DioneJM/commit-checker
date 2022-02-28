@@ -11,7 +11,7 @@ async fn main() -> Result<(), Error> {
 
 async fn handler(event: Value, _: Context) -> Result<Value, Error> {
     let first_name = event["firstName"].as_str().expect("No first name found");
-    Ok(json!({ "message": format!("Hello, {}!", first_name) }))
+    Ok(json!({ "message": format!("Waddup, {}!", first_name) }))
 }
 
 #[cfg(test)]
