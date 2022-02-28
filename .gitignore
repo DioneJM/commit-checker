@@ -1,5 +1,5 @@
 node_modules
 .serverless
-target
-.idea
-build
+target/
+.idea/
+build/
