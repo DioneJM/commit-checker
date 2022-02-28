@@ -1,16 +1,14 @@
-use lambda::{handler_fn, Context};
+use lambda_runtime::{service_fn, LambdaEvent, Error};
 use serde_json::{json, Value};
-
-type Error = Box<dyn std::error::Error + Sync + Send + 'static>;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    lambda::run(handler_fn(handler)).await?;
-    Ok(())
-}
+    let func = service_fn(handler);
+    lambda_runtime::run(func).await?;
+    Ok(())}
 
-async fn handler(event: Value, _: Context) -> Result<Value, Error> {
-    let first_name = event["firstName"].as_str().expect("No first name found");
+async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
+    let first_name = event.payload["firstName"].as_str().expect("No first name found");
     Ok(json!({ "message": format!("Waddup, {}!", first_name) }))
 }
 
@@ -25,7 +23,7 @@ mod tests {
             "answer": 42
         });
         assert_eq!(
-            handler(event.clone(), Context::default())
+            handler(LambdaEvent::new(event.clone(), Context::default()))
                 .await
                 .expect("expected Ok(_) value"),
             event
