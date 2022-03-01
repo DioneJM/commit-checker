@@ -26,6 +26,7 @@ async fn get_commits_for_date(date: String) -> String {
     let fragment = Html::parse_document(&body);
 
     // date is in format YYYY-MM-DD
+    // todo: create type that checks for this
     let selector_query = format!("rect[data-date=\"{}\"]", date);
     let commit_box = Selector::parse(selector_query.as_str()).unwrap();
     let html = fragment
