@@ -1,17 +1,20 @@
-use lambda_runtime::{service_fn, LambdaEvent, Error};
-use serde_json::{json, Value};
+use lambda_runtime::{service_fn, Error, LambdaEvent};
 use scraper::{Html, Selector};
+use serde_json::{json, Value};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let func = service_fn(handler);
     lambda_runtime::run(func).await?;
-    Ok(())}
+    Ok(())
+}
 
 async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let date = event.payload["date"].as_str().expect("No date found");
     let num_commits_made = get_commit_box_for_day(date.to_string()).await;
-    Ok(json!({ "message": format!("Commits, {}!", num_commits_made) }))
+    Ok(json!({
+        "message": format!("Commits, {}!", num_commits_made)
+    }))
 }
 
 async fn get_commit_box_for_day(date: String) -> String {
@@ -28,7 +31,7 @@ async fn get_commit_box_for_day(date: String) -> String {
     let html = fragment
         .select(&commit_box)
         .take(1)
-        .nth(0)
+        .next()
         .unwrap()
         .value()
         .attr("data-count")
@@ -39,8 +42,6 @@ async fn get_commit_box_for_day(date: String) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lambda_runtime::Context;
-    use serde_json::json;
 
     #[tokio::test]
     async fn html_get() {
@@ -52,7 +53,7 @@ mod tests {
         let fragment = Html::parse_document(&body);
         let username = Selector::parse(".vcard-username").unwrap();
         let html = fragment.select(&username);
-        let html = html.take(1).nth(0).unwrap();
+        let html = html.take(1).next().unwrap();
         assert_eq!(html.html(),"<span class=\"p-nickname vcard-username d-block\" itemprop=\"additionalName\">\n          DioneJM\n\n        </span>");
     }
 
