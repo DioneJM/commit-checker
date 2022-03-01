@@ -43,27 +43,14 @@ mod tests {
     use serde_json::json;
 
     #[tokio::test]
-    async fn handler_handles() {
-        let event = json!({
-            "answer": 42
-        });
-        assert_eq!(
-            handler(LambdaEvent::new(event.clone(), Context::default()))
-                .await
-                .expect("expected Ok(_) value"),
-            event
-        )
-    }
-
-    #[tokio::test]
     async fn html_get() {
         let url = "https://github.com/DioneJM";
-        let mut resp = reqwest::get(url).await.expect("Failed to get response");
+        let resp = reqwest::get(url).await.expect("Failed to get response");
         assert!(resp.status().is_success());
 
         let body = resp.text().await.unwrap();
         let fragment = Html::parse_document(&body);
-        let username = Selector::parse("rect[data-date=\"2022-02-28\"").unwrap(); //Selector::parse(".vcard-username").unwrap();
+        let username = Selector::parse(".vcard-username").unwrap();
         let html = fragment.select(&username);
         let html = html.take(1).nth(0).unwrap();
         assert_eq!(html.html(),"<span class=\"p-nickname vcard-username d-block\" itemprop=\"additionalName\">\n          DioneJM\n\n        </span>");
