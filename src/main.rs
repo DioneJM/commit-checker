@@ -69,4 +69,11 @@ mod tests {
         let html = html.take(1).nth(0).unwrap();
         assert_eq!(html.html(),"<span class=\"p-nickname vcard-username d-block\" itemprop=\"additionalName\">\n          DioneJM\n\n        </span>");
     }
+
+    #[tokio::test]
+    async fn get_commit() {
+        let date = "2022-01-02";
+        let num_commits_made = get_commit_box_for_day(date.to_string()).await;
+        assert_eq!(num_commits_made, "8");
+    }
 }
