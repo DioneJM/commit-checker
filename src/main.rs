@@ -16,7 +16,7 @@ async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
 
 async fn get_commit_box_for_day(date: String) -> String {
     let url = "https://github.com/DioneJM";
-    let mut resp = reqwest::get(url).await.expect("Failed to get response");
+    let resp = reqwest::get(url).await.expect("Failed to get response");
     debug_assert!(resp.status().is_success());
 
     let body = resp.text().await.unwrap();
@@ -63,7 +63,6 @@ mod tests {
 
         let body = resp.text().await.unwrap();
         let fragment = Html::parse_document(&body);
-        // let commit_box = Selector::parse("rect[data-date=\"2022-02-28\"").unwrap();
         let username = Selector::parse("rect[data-date=\"2022-02-28\"").unwrap(); //Selector::parse(".vcard-username").unwrap();
         let html = fragment.select(&username);
         let html = html.take(1).nth(0).unwrap();
