@@ -11,13 +11,13 @@ async fn main() -> Result<(), Error> {
 
 async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let date = event.payload["date"].as_str().expect("No date found");
-    let num_commits_made = get_commit_box_for_day(date.to_string()).await;
+    let num_commits_made = get_commits_for_date(date.to_string()).await;
     Ok(json!({
         "message": format!("Commits, {}!", num_commits_made)
     }))
 }
 
-async fn get_commit_box_for_day(date: String) -> String {
+async fn get_commits_for_date(date: String) -> String {
     let url = "https://github.com/DioneJM";
     let resp = reqwest::get(url).await.expect("Failed to get response");
     debug_assert!(resp.status().is_success());
@@ -26,13 +26,19 @@ async fn get_commit_box_for_day(date: String) -> String {
     let fragment = Html::parse_document(&body);
 
     // date is in format YYYY-MM-DD
-    let selector_query = format!("rect[data-date=\"{}\"", date);
+    let selector_query = format!("rect[data-date=\"{}\"]", date);
     let commit_box = Selector::parse(selector_query.as_str()).unwrap();
     let html = fragment
         .select(&commit_box)
         .take(1)
-        .next()
-        .unwrap()
+        .next();
+
+    if html.is_none() {
+        println!("Could not find commit box for date: {}", selector_query);
+        return 0.to_string();
+    }
+
+    let html = html.unwrap()
         .value()
         .attr("data-count")
         .unwrap();
@@ -60,7 +66,7 @@ mod tests {
     #[tokio::test]
     async fn get_commit() {
         let date = "2022-01-02";
-        let num_commits_made = get_commit_box_for_day(date.to_string()).await;
+        let num_commits_made = get_commits_for_date(date.to_string()).await;
         assert_eq!(num_commits_made, "8");
     }
 }
