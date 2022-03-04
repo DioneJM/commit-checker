@@ -1,6 +1,7 @@
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use scraper::{Html, Selector};
 use serde_json::{json, Value};
+use chrono::{DateTime, Utc, Datelike};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -11,7 +12,27 @@ async fn main() -> Result<(), Error> {
 
 async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let date = event.payload["date"].as_str().expect("No date found");
-    let num_commits_made = get_commits_for_date(date.to_string()).await;
+
+    let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
+
+    let month = if datetime.month() > 10 {
+        datetime.month().to_string()
+    } else {
+        format!("0{}", datetime.month())
+    };
+    let day = if datetime.day() > 10 {
+        datetime.day().to_string()
+    } else {
+        format!("0{}", datetime.day())
+    };
+
+    let formatted_date = format!(
+        "{year}-{month}-{day}",
+        year = datetime.year(),
+        month = month,
+        day = day,
+    );
+    let num_commits_made = get_commits_for_date(formatted_date).await;
     Ok(json!({
         "message": format!("Commits, {}!", num_commits_made)
     }))
@@ -66,8 +87,27 @@ mod tests {
 
     #[tokio::test]
     async fn get_commit() {
-        let date = "2022-01-02";
-        let num_commits_made = get_commits_for_date(date.to_string()).await;
+        let date = "2022-01-02T18:44:49Z";
+        let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
+        let month = if datetime.month() > 10 {
+            datetime.month().to_string()
+        } else {
+            format!("0{}", datetime.month())
+        };
+        let day = if datetime.day() > 10 {
+            datetime.day().to_string()
+        } else {
+            format!("0{}", datetime.day())
+        };
+
+        let formatted_date = format!(
+            "{year}-{month}-{day}",
+            year = datetime.year(),
+            month = month,
+            day = day,
+        );
+
+        let num_commits_made = get_commits_for_date(formatted_date).await;
         assert_eq!(num_commits_made, "8");
     }
 }
