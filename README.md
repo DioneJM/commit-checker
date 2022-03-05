@@ -21,7 +21,7 @@ sam deploy
 
 ## How to invoke lambda
 ```bash
-aws lambda invoke --cli-binary-format raw-in-base64-out --function-name commit-checker-stack-CommitChecker-lVlrMRBDMr6X --payload '{"date": "2022-03-02" }' output.json && cat output.json
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name commit-checker-stack-CommitChecker-lVlrMRBDMr6X --payload '{"date": "2022-01-02T18:44:49Z" }' output.json && cat output.json
 ```
 
 ## Clean up
