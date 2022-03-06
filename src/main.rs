@@ -1,7 +1,7 @@
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use scraper::{Html, Selector};
 use serde_json::{json, Value};
-use chrono::{DateTime, Utc, Datelike};
+use chrono::{DateTime, Datelike};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
