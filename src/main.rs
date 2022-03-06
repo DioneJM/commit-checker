@@ -12,6 +12,7 @@ async fn main() -> Result<(), Error> {
 
 async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let date = event.payload["date"].as_str().expect("No date found");
+    println!("Processing date: {}", date);
 
     let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
 
@@ -32,7 +33,10 @@ async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
         month = month,
         day = day,
     );
+    println!("Processing date: {}", date);
+    println!("Formatted date: {}", formatted_date);
     let num_commits_made = get_commits_for_date(formatted_date).await;
+    println!("Num commits made: {}", num_commits_made);
     Ok(json!({
         "message": format!("Commits, {}!", num_commits_made)
     }))
