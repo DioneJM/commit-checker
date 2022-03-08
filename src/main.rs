@@ -19,25 +19,7 @@ async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let date = event.payload["date"].as_str().expect("No date found");
     println!("Processing date: {}", date);
 
-    let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
-
-    let month = if datetime.month() > 10 {
-        datetime.month().to_string()
-    } else {
-        format!("0{}", datetime.month())
-    };
-    let day = if datetime.day() > 10 {
-        datetime.day().to_string()
-    } else {
-        format!("0{}", datetime.day())
-    };
-
-    let formatted_date = format!(
-        "{year}-{month}-{day}",
-        year = datetime.year(),
-        month = month,
-        day = day,
-    );
+    let formatted_date = formatted_date_from_rfc3339_timestamp(date);
 
     println!("Processing date: {}", date);
     println!("Formatted date: {}", formatted_date);
@@ -109,6 +91,28 @@ async fn get_commits_for_date(date: &String) -> i32 {
     html.to_string().parse::<i32>().unwrap_or(0)
 }
 
+fn formatted_date_from_rfc3339_timestamp(date: &str) -> String {
+    let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
+
+    let month = if datetime.month() > 10 {
+        datetime.month().to_string()
+    } else {
+        format!("0{}", datetime.month())
+    };
+    let day = if datetime.day() > 10 {
+        datetime.day().to_string()
+    } else {
+        format!("0{}", datetime.day())
+    };
+
+    format!(
+        "{year}-{month}-{day}",
+        year = datetime.year(),
+        month = month,
+        day = day,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,25 +134,7 @@ mod tests {
     #[tokio::test]
     async fn get_commit() {
         let date = "2022-01-02T18:44:49Z";
-        let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
-        let month = if datetime.month() > 10 {
-            datetime.month().to_string()
-        } else {
-            format!("0{}", datetime.month())
-        };
-        let day = if datetime.day() > 10 {
-            datetime.day().to_string()
-        } else {
-            format!("0{}", datetime.day())
-        };
-
-        let formatted_date = format!(
-            "{year}-{month}-{day}",
-            year = datetime.year(),
-            month = month,
-            day = day,
-        );
-
+        let formatted_date = formatted_date_from_rfc3339_timestamp(date);
         let num_commits_made = get_commits_for_date(&formatted_date).await;
         assert_eq!(num_commits_made, 8);
     }
