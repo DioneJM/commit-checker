@@ -124,7 +124,7 @@ mod tests {
         let username = Selector::parse(".vcard-username").unwrap();
         let html = fragment.select(&username);
         let html = html.take(1).next().unwrap();
-        assert_eq!(html.html(),"<span class=\"p-nickname vcard-username d-block\" itemprop=\"additionalName\">\n          DioneJM\n\n        </span>");
+        assert!(html.html().contains("DioneJM"));
     }
 
     #[tokio::test]
@@ -150,6 +150,26 @@ mod tests {
         );
 
         let num_commits_made = get_commits_for_date(&formatted_date).await;
-        assert_eq!(num_commits_made, "8");
+        assert_eq!(num_commits_made, 8);
+    }
+
+    #[test]
+    fn build_publish_input_no_commits() {
+        env::set_var(SNS_TOPIC_ARN, "some topic");
+        let commits = 0;
+        let date = "2022-01-01".to_string();
+        let publish_input = create_publish_input(commits, &date);
+        assert_eq!(publish_input.message, "You haven't made a commit yet today :( Make sure to have a commit in!");
+        assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
+    }
+
+    #[test]
+    fn build_publish_input_more_than_zero_commits() {
+        env::set_var(SNS_TOPIC_ARN, "some topic");
+        let commits = 1;
+        let date = "2022-01-01".to_string();
+        let publish_input = create_publish_input(commits, &date);
+        assert_eq!(publish_input.message, format!("Nice job! You made {} commits on {}", commits, date));
+        assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
     }
 }
