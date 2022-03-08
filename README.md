@@ -9,7 +9,8 @@ sam deploy -t package.yaml --guided
 note: requires samconfig.toml - [see docs for more info](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html)
 
 ## How to build and release:
-Run the release.sh script under scripts/ directory
+Run the `release.sh` script under scripts/ directory
+
 From project root:
 ```bash
 ./scripts/release.sh
