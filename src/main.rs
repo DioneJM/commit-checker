@@ -2,6 +2,11 @@ use lambda_runtime::{service_fn, Error, LambdaEvent};
 use scraper::{Html, Selector};
 use serde_json::{json, Value};
 use chrono::{DateTime, Datelike};
+use rusoto_core::{Region};
+use rusoto_sns::{Sns, SnsClient, PublishInput};
+use std::env;
+
+const SNS_TOPIC_ARN: &str = "SNS_TOPIC_ARN";
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -33,16 +38,49 @@ async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
         month = month,
         day = day,
     );
+
     println!("Processing date: {}", date);
     println!("Formatted date: {}", formatted_date);
-    let num_commits_made = get_commits_for_date(formatted_date).await;
+    let num_commits_made = get_commits_for_date(&formatted_date).await;
     println!("Num commits made: {}", num_commits_made);
+
+    let sns_client = create_sns_client().await;
+    let publish_input = create_publish_input(num_commits_made, &formatted_date);
+    let response = sns_client.publish(publish_input).await;
+    match response {
+        Ok(_) => println!("Successfully sent text message"),
+        Err(e) => println!("Failed to send text message\n{:?}", e.to_string())
+    }
     Ok(json!({
         "message": format!("Commits, {}!", num_commits_made)
     }))
 }
 
-async fn get_commits_for_date(date: String) -> String {
+fn create_publish_input(num_commits_made: i32, date: &String) -> PublishInput {
+    let message = if num_commits_made > 0 {
+        format!("Nice job! You made {} commits on {}", num_commits_made, date)
+    } else {
+        format!("You haven't made a commit yet today :( Make sure to have a commit in!")
+    };
+
+    PublishInput {
+        message,
+        message_attributes: None,
+        message_deduplication_id: None,
+        message_group_id: None,
+        message_structure: None,
+        phone_number: None,
+        target_arn: None,
+        topic_arn: Some(env::var(SNS_TOPIC_ARN).expect("Failed to find SNS topic ARN")),
+        subject: Some("Commit Check".to_string()),
+    }
+}
+
+async fn create_sns_client() -> SnsClient {
+    SnsClient::new(Region::ApSoutheast2)
+}
+
+async fn get_commits_for_date(date: &String) -> i32 {
     let url = "https://github.com/DioneJM";
     let resp = reqwest::get(url).await.expect("Failed to get response");
     debug_assert!(resp.status().is_success());
@@ -61,14 +99,14 @@ async fn get_commits_for_date(date: String) -> String {
 
     if html.is_none() {
         println!("Could not find commit box for date: {}", selector_query);
-        return 0.to_string();
+        return 0;
     }
 
     let html = html.unwrap()
         .value()
         .attr("data-count")
         .unwrap();
-    html.to_string()
+    html.to_string().parse::<i32>().unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -111,7 +149,7 @@ mod tests {
             day = day,
         );
 
-        let num_commits_made = get_commits_for_date(formatted_date).await;
+        let num_commits_made = get_commits_for_date(&formatted_date).await;
         assert_eq!(num_commits_made, "8");
     }
 }
