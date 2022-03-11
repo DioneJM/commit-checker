@@ -39,10 +39,12 @@ async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
 }
 
 fn create_publish_input(num_commits_made: i32, date: &String) -> PublishInput {
-    let message = if num_commits_made > 0 {
+    let message = if num_commits_made > 1 {
         format!("Nice job! You made {} commits on {}", num_commits_made, date)
+    } else if num_commits_made == 1 {
+        format!("Nice job on the commit you made on {}", date)
     } else {
-        format!("You haven't made a commit yet today :( Make sure to have a commit in!")
+        format!("You haven't made a commit yet today 😢 Make sure to have a commit in!")
     };
 
     PublishInput {
@@ -145,14 +147,24 @@ mod tests {
         let commits = 0;
         let date = "2022-01-01".to_string();
         let publish_input = create_publish_input(commits, &date);
-        assert_eq!(publish_input.message, "You haven't made a commit yet today :( Make sure to have a commit in!");
+        assert_eq!(publish_input.message, "You haven't made a commit yet today 😢 Make sure to have a commit in!");
         assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
     }
 
     #[test]
-    fn build_publish_input_more_than_zero_commits() {
+    fn build_publish_input_single_commit() {
         env::set_var(SNS_TOPIC_ARN, "some topic");
         let commits = 1;
+        let date = "2022-01-01".to_string();
+        let publish_input = create_publish_input(commits, &date);
+        assert_eq!(publish_input.message, format!("Nice job on the commit you made on {}", date));
+        assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
+    }
+
+    #[test]
+    fn build_publish_input_more_than_one_commit() {
+        env::set_var(SNS_TOPIC_ARN, "some topic");
+        let commits = 2;
         let date = "2022-01-01".to_string();
         let publish_input = create_publish_input(commits, &date);
         assert_eq!(publish_input.message, format!("Nice job! You made {} commits on {}", commits, date));
