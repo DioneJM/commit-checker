@@ -96,12 +96,12 @@ async fn get_commits_for_date(date: &String) -> i32 {
 fn formatted_date_from_rfc3339_timestamp(date: &str) -> String {
     let datetime = DateTime::parse_from_rfc3339(date).expect("Failed to parse event date");
 
-    let month = if datetime.month() > 10 {
+    let month = if datetime.month() >= 10 {
         datetime.month().to_string()
     } else {
         format!("0{}", datetime.month())
     };
-    let day = if datetime.day() > 10 {
+    let day = if datetime.day() >= 10 {
         datetime.day().to_string()
     } else {
         format!("0{}", datetime.day())
