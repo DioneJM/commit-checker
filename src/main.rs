@@ -133,6 +133,27 @@ mod tests {
         assert!(html.html().contains("DioneJM"));
     }
 
+    #[test]
+    fn formats_date_correctly_when_less_than_ten() {
+        let date = "2022-01-02T18:44:49Z";
+        let formatted_date = formatted_date_from_rfc3339_timestamp(date);
+        assert_eq!(formatted_date, "2022-01-02")
+    }
+
+    #[test]
+    fn formats_date_correctly_when_is_ten() {
+        let date = "2022-10-10T18:44:49Z";
+        let formatted_date = formatted_date_from_rfc3339_timestamp(date);
+        assert_eq!(formatted_date, "2022-10-10")
+    }
+
+    #[test]
+    fn formats_date_correctly_when_greater_than_ten() {
+        let date = "2022-11-11T18:44:49Z";
+        let formatted_date = formatted_date_from_rfc3339_timestamp(date);
+        assert_eq!(formatted_date, "2022-11-11")
+    }
+
     #[tokio::test]
     async fn get_commit() {
         let date = "2022-01-02T18:44:49Z";
