@@ -1,5 +1,5 @@
 use lambda_runtime::{service_fn, Error, LambdaEvent};
-use scraper::{Html, Selector};
+use scraper::{ElementRef, Html, Selector};
 use serde_json::{json, Value};
 use chrono::{DateTime, Datelike};
 use rusoto_core::{Region};
@@ -23,32 +23,24 @@ async fn handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
 
     println!("Processing date: {}", date);
     println!("Formatted date: {}", formatted_date);
-    let num_commits_made = get_commits_for_date(&formatted_date).await;
-    println!("Num commits made: {}", num_commits_made);
+    let commit_message = get_commit_message_for_date(&formatted_date).await;
+    println!("Commit message for date {}: {}", formatted_date, commit_message);
 
     let sns_client = create_sns_client().await;
-    let publish_input = create_publish_input(num_commits_made, &formatted_date);
+    let publish_input = create_publish_input(&commit_message);
     let response = sns_client.publish(publish_input).await;
     match response {
         Ok(_) => println!("Successfully sent text message"),
         Err(e) => println!("Failed to send text message\n{:?}", e.to_string())
     }
     Ok(json!({
-        "message": format!("Commits, {}!", num_commits_made)
+        "message": commit_message
     }))
 }
 
-fn create_publish_input(num_commits_made: i32, date: &String) -> PublishInput {
-    let message = if num_commits_made > 1 {
-        format!("Nice job! You made {} commits on {}", num_commits_made, date)
-    } else if num_commits_made == 1 {
-        format!("Nice job on the commit you made on {}", date)
-    } else {
-        format!("You haven't made a commit yet today 😢 Make sure to have a commit in!")
-    };
-
+fn create_publish_input(message: &String) -> PublishInput {
     PublishInput {
-        message,
+        message: message.to_string(),
         message_attributes: None,
         message_deduplication_id: None,
         message_group_id: None,
@@ -64,7 +56,7 @@ async fn create_sns_client() -> SnsClient {
     SnsClient::new(Region::ApSoutheast2)
 }
 
-async fn get_commits_for_date(date: &String) -> i32 {
+async fn get_commit_message_for_date(date: &String) -> String {
     let url = "https://github.com/DioneJM";
     let resp = reqwest::get(url).await.expect("Failed to get response");
     debug_assert!(resp.status().is_success());
@@ -83,14 +75,12 @@ async fn get_commits_for_date(date: &String) -> i32 {
 
     if html.is_none() {
         println!("Could not find commit box for date: {}", selector_query);
-        return 0;
+        return String::from("No commits found");
     }
 
-    let html = html.unwrap()
-        .value()
-        .attr("data-count")
+    let html: ElementRef = html
         .unwrap();
-    html.to_string().parse::<i32>().unwrap_or(0)
+    String::from("Commit Checker: ".to_owned() + &html.inner_html())
 }
 
 fn formatted_date_from_rfc3339_timestamp(date: &str) -> String {
@@ -156,39 +146,18 @@ mod tests {
 
     #[tokio::test]
     async fn get_commit() {
-        let date = "2022-01-02T18:44:49Z";
+        let date = "2022-08-03T18:44:49Z";
         let formatted_date = formatted_date_from_rfc3339_timestamp(date);
-        let num_commits_made = get_commits_for_date(&formatted_date).await;
-        assert_eq!(num_commits_made, 8);
+        let commit_message = get_commit_message_for_date(&formatted_date).await;
+        assert_eq!(commit_message, String::from("Commit Checker: 16 contributions on August 3, 2022"));
     }
 
     #[test]
     fn build_publish_input_no_commits() {
         env::set_var(SNS_TOPIC_ARN, "some topic");
-        let commits = 0;
-        let date = "2022-01-01".to_string();
-        let publish_input = create_publish_input(commits, &date);
-        assert_eq!(publish_input.message, "You haven't made a commit yet today 😢 Make sure to have a commit in!");
-        assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
-    }
-
-    #[test]
-    fn build_publish_input_single_commit() {
-        env::set_var(SNS_TOPIC_ARN, "some topic");
-        let commits = 1;
-        let date = "2022-01-01".to_string();
-        let publish_input = create_publish_input(commits, &date);
-        assert_eq!(publish_input.message, format!("Nice job on the commit you made on {}", date));
-        assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
-    }
-
-    #[test]
-    fn build_publish_input_more_than_one_commit() {
-        env::set_var(SNS_TOPIC_ARN, "some topic");
-        let commits = 2;
-        let date = "2022-01-01".to_string();
-        let publish_input = create_publish_input(commits, &date);
-        assert_eq!(publish_input.message, format!("Nice job! You made {} commits on {}", commits, date));
+        let message = String::from("Commit Checker: this is the message you'll see in your text");
+        let publish_input = create_publish_input(&message);
+        assert_eq!(publish_input.message, message);
         assert_eq!(publish_input.topic_arn, Some("some topic".to_string()));
     }
 }
