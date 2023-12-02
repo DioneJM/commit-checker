@@ -56,6 +56,10 @@ async fn create_sns_client() -> SnsClient {
     SnsClient::new(Region::ApSoutheast2)
 }
 
+fn format_error_message(date: &String) -> String {
+    String::from(format!("No commits found on {}", date))
+}
+
 async fn get_commit_message_for_date(date: &String) -> String {
     let url = "https://github.com/DioneJM";
     let resp = reqwest::get(url).await.expect("Failed to get response");
@@ -75,7 +79,7 @@ async fn get_commit_message_for_date(date: &String) -> String {
 
     if html.is_none() {
         println!("Could not find commit box for date: {}", selector_query);
-        return String::from("No commits found");
+        return format_error_message(date)
     }
 
     println!("commit box found, attempting to find number of commits");
@@ -93,7 +97,7 @@ async fn get_commit_message_for_date(date: &String) -> String {
 
     if tooltip_html.is_none() {
         println!("Could not find tooltip for corresponding commit box for date: {}", tooltip_query);
-        return String::from("No commits found");
+        return format_error_message(date)
     }
 
     println!("tooltip found, attempting to find number of commits");
