@@ -66,11 +66,11 @@ async fn get_commit_message_for_date(date: &String) -> String {
 
     // date is in format YYYY-MM-DD
     // todo: create type that checks for this
-    let selector_query = format!("rect[data-date=\"{}\"]", date);
+    let selector_query = format!("td[data-date=\"{}\"]", date);
+    println!("commit_box query: {}", selector_query);
     let commit_box = Selector::parse(selector_query.as_str()).unwrap();
     let html = fragment
         .select(&commit_box)
-        .take(1)
         .next();
 
     if html.is_none() {
@@ -78,9 +78,26 @@ async fn get_commit_message_for_date(date: &String) -> String {
         return String::from("No commits found");
     }
 
-    let html: ElementRef = html
+    println!("commit box found, attempting to find number of commits");
+
+    let commit_box_element: ElementRef = html
         .unwrap();
-    String::from("Commit Checker: ".to_owned() + &html.inner_html())
+    let commit_box_id = commit_box_element.value().attr("id").expect("no id attr with tooltip id found");
+    let tooltip_query = format!("tool-tip[for=\"{}\"]", commit_box_id);
+    println!("tooltip query: {}", selector_query);
+
+    let selected_tooltip = Selector::parse(tooltip_query.as_str()).unwrap();
+    let tooltip_html = fragment
+        .select(&selected_tooltip)
+        .next();
+
+    if tooltip_html.is_none() {
+        println!("Could not find tooltip for corresponding commit box for date: {}", tooltip_query);
+        return String::from("No commits found");
+    }
+
+    println!("tooltip found, attempting to find number of commits");
+    String::from("Commit Checker: ".to_owned() + &tooltip_html.unwrap().inner_html())
 }
 
 fn formatted_date_from_rfc3339_timestamp(date: &str) -> String {
@@ -146,10 +163,10 @@ mod tests {
 
     #[tokio::test]
     async fn get_commit() {
-        let date = "2022-08-03T18:44:49Z";
+        let date = "2023-11-04T18:44:49Z";
         let formatted_date = formatted_date_from_rfc3339_timestamp(date);
         let commit_message = get_commit_message_for_date(&formatted_date).await;
-        assert_eq!(commit_message, String::from("Commit Checker: 16 contributions on August 3, 2022"));
+        assert_eq!(commit_message, String::from("Commit Checker: 6 contributions on November 4th."));
     }
 
     #[test]
